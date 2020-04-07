@@ -1,0 +1,10 @@
+# Created by .ignore support plugin (hsz.mobi)
+*.idea/
+*venv/
+*.pyc
+*.egg-info
+__pycache__/
+example
+build
+dist
+.github
