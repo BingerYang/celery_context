@@ -1,10 +1,10 @@
-flask_celery_context
-====================
+celery_context
+==============
 
 Documentation
 -------------
 
-The documentation is hosted at https://github.com/BingerYang/flask_celery_context
+The documentation is hosted at https://github.com/BingerYang/celery_context
 
 
 Installation
@@ -12,7 +12,7 @@ Installation
 
 .. code:: shell
 
-     pip install flask_celery_context
+     pip install celery_context
 
 Usage
 -----
@@ -24,7 +24,7 @@ example:
 
     # -*- coding: utf-8 -*-
     from flask import Flask
-    from flask_celery import Celery
+    from celery_context import Celery
     from flask import request
 
     config = dict(redis={"host": "*****", "port": 31320, "password": "lab@2019"})
@@ -32,7 +32,7 @@ example:
     app = Flask("example.run")
     app.config['CELERY_BROKER_URL'] = "{}/1".format(redis_url)
     app.config['CELERY_RESULT_BACKEND'] = "{}/2".format(redis_url)
-    celery = Celery(app)
+    celery = Celery(app=app)
     celery.setup_task_context(lambda: dict(path=request.path))
 
 

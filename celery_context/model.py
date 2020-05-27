@@ -3,6 +3,7 @@
 # @Author   : binger
 
 __all__ = ["reload_celery_task", "Celery"]
+
 from celery import Celery as CeleryBase
 
 # 在异步处理时使用，如下：
@@ -69,8 +70,9 @@ def reload_celery_task(celery, app=None, setup_task_context_cb=None):
 class Celery(CeleryBase):
     _setup_task_context_cb = None
 
-    def __init__(self, app=None, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super(Celery, self).__init__(*args, **kwargs)
+        app = kwargs.get("app", None)
         if app:
             self.init_app(app)
 

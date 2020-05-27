@@ -1,6 +1,6 @@
 import os
 from setuptools import setup, find_packages
-from flask_celery import name, __description__, __version__
+from celery_context import name, __description__, __version__
 
 # read dev requirements
 fname = os.path.join(os.path.dirname(__file__), 'requirements.txt')
