@@ -2,13 +2,14 @@
 # @Time     : 2020-02-07 11:26
 # @Author   : binger
 
-__all__ = ["reload_celery_task", "Celery"]
+__all__ = ("reload_celery_task", "Celery")
 
 from celery import Celery as CeleryBase
 
 # 在异步处理时使用，如下：
 # from celery import current_task
 # current_task.request.content
+from celery.signals import worker_process_init
 from celery.worker import request as celery_request
 
 
@@ -40,7 +41,7 @@ def reload_celery_task(celery, app=None, setup_task_context_cb=None):
         content = {}
 
         def __call__(self, *args, **kwargs):
-            if app:
+            if app is not None:
                 with app.app_context():
                     return super(ContextTask, self).__call__(*args, **kwargs)
             else:
@@ -72,6 +73,7 @@ class Celery(CeleryBase):
 
     def __init__(self, *args, **kwargs):
         super(Celery, self).__init__(*args, **kwargs)
+        self.__sig_work_init = None
         app = kwargs.get("app", None)
         if app:
             self.init_app(app)
@@ -92,3 +94,18 @@ class Celery(CeleryBase):
 
     def reload_task(self, app):
         reload_celery_task(self, app, self._setup_task_context_cb)
+
+    def add_flask_content(self, create_app):
+        from flask import current_app
+        reload_celery_task(self, current_app, self._setup_task_context_cb)
+
+        def init_celery_flask_app(**kwargs):
+            print("ssssssw", kwargs)
+            """Create the Flask app after forking a new worker.
+
+            This is to make sure no resources are shared between processes.
+            """
+            app = create_app()
+            app.app_context().push()
+
+        self.__sig_work_init = worker_process_init.connect(init_celery_flask_app)
