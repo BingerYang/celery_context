@@ -3,7 +3,7 @@
 # @Author   : binger
 
 name = "celery_context"
-version_info = (0, 0, 2, 21030314)
+version_info = (0, 0, 3, 21030419)
 __version__ = ".".join([str(v) for v in version_info])
 __description__ = '实现celery在flask/django下的上下文一致性的简单扩展'
 
