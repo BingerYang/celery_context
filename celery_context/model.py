@@ -4,10 +4,10 @@
 
 __all__ = ("reload_celery_task", "Celery")
 
-from flask import current_app
+# 在异步处理时使用，如下：
+# from celery import current_task
 # current_task.request.content
 from celery import Celery as CeleryBase
-from celery.signals import worker_process_init
 from celery.worker import request as celery_request
 
 
@@ -33,13 +33,16 @@ task.extract_exec_options = task.mattrgetter(
 )
 
 
-def reload_celery_task(celery, setup_task_context_cb=None):
+def reload_celery_task(celery, app=None, setup_task_context_cb=None):
     class ContextTask(celery.Task):
         abstract = True
         content = {}
 
         def __call__(self, *args, **kwargs):
-            with current_app.app_context():
+            if app is not None:
+                with app.app_context():
+                    return super(ContextTask, self).__call__(*args, **kwargs)
+            else:
                 return super(ContextTask, self).__call__(*args, **kwargs)
 
         def set_task_context(self, f, *args, **kwargs):
@@ -76,11 +79,12 @@ class Celery(CeleryBase):
 
     def init_app(self, app):
         # Instantiate celery and read config.
-        super(Celery, self).__init__(app.import_name, broker=app.config['CELERY_BROKER_URL'])
+        super(Celery, self).__init__(app.import_name, broker=app.config.get('CELERY_BROKER_URL', None))
 
         # Set result backend default.
         if 'CELERY_RESULT_BACKEND' in app.config:
             self._preconf['CELERY_RESULT_BACKEND'] = app.config['CELERY_RESULT_BACKEND']
+            app.config['result_backend'] = app.config['CELERY_RESULT_BACKEND']
 
         self.conf.update(app.config)
         self.reload_task(app)
@@ -88,18 +92,10 @@ class Celery(CeleryBase):
     def setup_task_context(self, f):
         self._setup_task_context_cb = f
 
-    def reload_task(self, app=None):
-        reload_celery_task(self, self._setup_task_context_cb)
+    def reload_task(self, app):
+        reload_celery_task(self, app, self._setup_task_context_cb)
 
     def add_flask_content(self, create_app):
-        reload_celery_task(self, self._setup_task_context_cb)
-
-        def init_celery_flask_app(**kwargs):
-            """Create the Flask app after forking a new worker.
-
-            This is to make sure no resources are shared between processes.
-            """
-            app = create_app()
-            app.app_context().push()
-
-        self.__sig_work_init = worker_process_init.connect(init_celery_flask_app)
+        app = create_app()
+        reload_celery_task(self, app, self._setup_task_context_cb)
+        return app
